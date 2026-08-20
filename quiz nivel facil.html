@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Kids - Aventura do Saber</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", "Comic Sans MS", "Chalkboard SE", sans-serif;
+    background: linear-gradient(135deg, #7c3aed, #db2777, #f59e0b);
+    background-size: 400% 400%;
+    animation: fundo 12s ease infinite;
+    color: #333;
+    overflow-x: hidden;
+  }
+  @keyframes fundo {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  #app { max-width: 820px; margin: 0 auto; padding: 16px; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+
+  .tela { display: none; flex-direction: column; align-items: center; animation: aparecer .4s ease; }
+  .tela.ativa { display: flex; }
+  @keyframes aparecer { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+
+  .cartao {
+    background: #fff;
+    border-radius: 28px;
+    padding: 28px 24px;
+    width: 100%;
+    box-shadow: 0 16px 40px rgba(0,0,0,.25);
+    text-align: center;
+    position: relative;
+  }
+
+  h1 {
+    font-size: clamp(1.6rem, 5vw, 2.6rem);
+    color: #7c3aed;
+    line-height: 1.2;
+  }
+  .emoji-grande { font-size: clamp(3rem, 10vw, 5rem); display: block; margin-bottom: 8px; animation: pulo 1.5s ease infinite; }
+  @keyframes pulo { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+  .subtitulo { color: #666; margin-top: 8px; font-size: 1.05rem; }
+
+  .input-nome {
+    width: 100%;
+    max-width: 360px;
+    padding: 14px 18px;
+    font-size: 1.1rem;
+    border: 3px solid #ddd;
+    border-radius: 16px;
+    margin: 18px 0 6px;
+    text-align: center;
+    outline: none;
+    font-family: inherit;
+  }
+  .input-nome:focus { border-color: #7c3aed; }
+
+  .botao {
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    border-radius: 999px;
+    padding: 15px 34px;
+    transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 6px 18px rgba(0,0,0,.25);
+  }
+  .botao:hover { transform: scale(1.05); }
+  .botao:active { transform: scale(.95); }
+  .botao-roxa { background: linear-gradient(135deg,#8b5cf6,#7c3aed); }
+  .botao-verde { background: linear-gradient(135deg,#34d399,#10b981); }
+  .botao-laranja { background: linear-gradient(135deg,#fbbf24,#f59e0b); color:#5b3a00; }
+  .botao-azul { background: linear-gradient(135deg,#60a5fa,#3b82f6); }
+
+  .grade-categorias {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+    width: 100%;
+  }
+  .cat-btn {
+    font-family: inherit;
+    border: none;
+    border-radius: 20px;
+    padding: 18px 8px;
+    cursor: pointer;
+    font-weight: 700;
+    color: #fff;
+    font-size: 1rem;
+    box-shadow: 0 6px 14px rgba(0,0,0,.2);
+    transition: transform .15s;
+    line-height: 1.4;
+  }
+  .cat-btn:hover { transform: scale(1.06); }
+  .cat-btn:active { transform: scale(.94); }
+  .cat-btn .icone { font-size: 2rem; display: block; margin-bottom: 6px; }
+
+  /* Barra superior do jogo */
+  .topo-jogo { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 14px; gap: 10px; flex-wrap: wrap; }
+  .vidas { font-size: 1.6rem; letter-spacing: 4px; }
+  .pontos-badge {
+    background: #fff;
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-weight: 800;
+    box-shadow: 0 4px 10px rgba(0,0,0,.15);
+    font-size: 1.05rem;
+  }
+  .som-btn {
+    border: none;
+    background: #fff;
+    border-radius: 999px;
+    width: 42px; height: 42px;
+    font-size: 1.3rem;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,.15);
+  }
+
+  .progresso { width: 100%; height: 14px; background: rgba(255,255,255,.5); border-radius: 999px; overflow: hidden; margin-bottom: 16px; }
+  .progresso-interno { height: 100%; width: 0%; background: linear-gradient(90deg,#34d399,#10b981); border-radius: 999px; transition: width .4s; }
+
+  .cronometro-box { width: 100%; margin-bottom: 14px; }
+  .cronometro-texto { font-weight: 800; color: #fff; font-size: .9rem; margin-bottom: 4px; text-shadow: 0 1px 3px rgba(0,0,0,.3); }
+  .cronometro { width: 100%; height: 18px; background: rgba(0,0,0,.25); border-radius: 999px; overflow: hidden; }
+  .cronometro-interno { height: 100%; width: 100%; background: #34d399; border-radius: 999px; transition: width 1s linear; }
+  .cronometro-interno.perigo { background: #ef4444; }
+
+  .pergunta {
+    font-size: clamp(1.2rem, 4vw, 1.7rem);
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 22px;
+    line-height: 1.35;
+  }
+  .tag-categoria {
+    display: inline-block;
+    background: #f3e8ff;
+    color: #7c3aed;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 4px 14px;
+    font-size: .85rem;
+    margin-bottom: 12px;
+  }
+  .opcoes { display: grid; gap: 12px; width: 100%; }
+  .opcao {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f8fafc;
+    border: 3px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 14px 16px;
+    font-family: inherit;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    text-align: left;
+    transition: all .15s;
+  }
+  .opcao:hover { border-color: #8b5cf6; transform: translateX(4px); }
+  .letra {
+    flex-shrink: 0;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: #7c3aed;
+    color: #fff;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .95rem;
+  }
+  .opcao.certa { background: #d1fae5; border-color: #10b981; animation: balancar .5s; }
+  .opcao.certa .letra { background: #10b981; }
+  .opcao.errada { background: #fee2e2; border-color: #ef4444; animation: tremer .4s; }
+  .opcao.errada .letra { background: #ef4444; }
+  .opcao.apagada { opacity: .5; pointer-events: none; }
+  @keyframes balancar { 0%,100%{transform:scale(1);} 40%{transform:scale(1.05) rotate(-2deg);} 70%{transform:scale(.97);} }
+  @keyframes tremer { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 50%{transform:translateX(8px);} 75%{transform:translateX(-5px);} }
+
+  .feedback { display: none; margin-top: 16px; padding: 14px 18px; border-radius: 16px; font-weight: 700; font-size: 1.05rem; }
+  .feedback.certo { background: #d1fae5; color: #065f46; }
+  .feedback.errado { background: #fee2e2; color: #991b1b; }
+  .feedback .explicacao { font-weight: 500; margin-top: 6px; font-size: .95rem; opacity: .9; }
+  .acoes { margin-top: 14px; width: 100%; display: none; }
+  .acoes.ativa { display: block; }
+
+  .estrelas { font-size: clamp(2.5rem, 10vw, 4rem); letter-spacing: 8px; margin: 10px 0; }
+  .mensagem-final { font-size: 1.2rem; font-weight: 700; color: #1f2937; margin-bottom: 4px; }
+  .placar-final { font-size: 1rem; color: #666; margin-bottom: 20px; }
+  .botoes-finais { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+  .seletor { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 14px 0 6px; }
+  .stepper-btn {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: #7c3aed;
+    color: #fff;
+    font-size: 1.6rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,.2);
+    transition: transform .15s;
+  }
+  .stepper-btn:hover { transform: scale(1.1); }
+  .stepper-num { font-size: 2.2rem; font-weight: 800; color: #7c3aed; min-width: 44px; }
+  #inputs-nomes { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 8px; }
+
+  #confete { position: fixed; inset: 0; pointer-events: none; z-index: 999; }
+
+  @media (max-width: 480px) {
+    .cartao { padding: 20px 14px; }
+    .grade-categorias { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TELA INÍCIO -->
+  <section id="tela-inicio" class="tela ativa">
+    <div class="cartao">
+      <span class="emoji-grande">🧠</span>
+      <h1>Quiz Kids</h1>
+      <p class="subtitulo">Aventura do Saber 🌟</p>
+      <p style="font-weight:700;margin-top:14px;">👥 Quantos jogadores?</p>
+      <div class="seletor">
+        <button class="stepper-btn" id="btn-menos" title="Menos jogadores">−</button>
+        <span class="stepper-num" id="num-jogadores">1</span>
+        <button class="stepper-btn" id="btn-mais" title="Mais jogadores">+</button>
+      </div>
+      <div id="inputs-nomes"></div>
+      <br>
+      <button class="botao botao-roxa" id="btn-inicio">🚀 Vamos brincar!</button>
+      <p class="subtitulo">Responda certo, ganhe pontos e estrelas! ✨</p>
+    </div>
+  </section>
+
+  <!-- TELA CATEGORIAS -->
+  <section id="tela-categorias" class="tela">
+    <div class="cartao">
+      <h1>Escolha o assunto! 🎯</h1>
+      <p class="subtitulo" id="ola-nome"></p>
+      <div class="grade-categorias" id="grade-categorias"></div>
+      <br>
+      <button class="botao botao-laranja" id="btn-tudo">🎲 Tudo Misturado (sorteado)</button>
+      <br><br>
+      <button class="botao botao-azul" id="btn-voltar-inicio">⬅️ Voltar</button>
+    </div>
+  </section>
+
+  <!-- TELA JOGO -->
+  <section id="tela-jogo" class="tela">
+    <div class="topo-jogo">
+      <span class="vidas" id="vidas">❤️❤️❤️</span>
+      <span class="pontos-badge" id="jogador-badge">🎮 Jogador</span>
+      <span class="pontos-badge" id="pontos">⭐ 0</span>
+      <button class="som-btn" id="btn-sair" title="Voltar para o início">🏠</button>
+      <button class="som-btn" id="btn-som" title="Som ligado/desligado">🔊</button>
+    </div>
+    <div class="progresso"><div class="progresso-interno" id="progresso"></div></div>
+    <div id="placar-vivo" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:12px;"></div>
+    <div class="cartao">
+      <div class="cronometro-box">
+        <div class="cronometro-texto">⏰ Tempo: <span id="tempo-numero">20</span>s</div>
+        <div class="cronometro"><div class="cronometro-interno" id="cronometro"></div></div>
+      </div>
+      <span class="tag-categoria" id="tag-categoria">📚 Pergunta</span>
+      <div id="turno-aviso" style="font-weight:800;color:#7c3aed;margin:6px 0 10px;font-size:1.05rem;"></div>
+      <div class="pergunta" id="pergunta"></div>
+      <div class="opcoes" id="opcoes"></div>
+      <div class="feedback" id="feedback"></div>
+      <div class="acoes" id="acoes">
+        <button class="botao botao-verde" id="btn-proxima">➡️ Próxima</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TELA FIM -->
+  <section id="tela-fim" class="tela">
+    <div class="cartao">
+      <span class="emoji-grande" id="emoji-fim">🎉</span>
+      <h1 id="titulo-fim">Fim de Jogo!</h1>
+      <div class="estrelas" id="estrelas">⭐⭐⭐</div>
+      <p class="mensagem-final" id="mensagem-final"></p>
+      <p class="placar-final" id="placar-final"></p>
+      <div id="revisao" style="margin: 12px 0 4px; width: 100%; text-align: left;"></div>
+      <div class="botoes-finais">
+        <button class="botao botao-laranja" id="btn-treinar-erros" style="display:none;">🔄 Treinar as erradas</button>
+        <button class="botao botao-verde" id="btn-jogar-novamente">🔄 Jogar de novo</button>
+        <button class="botao botao-azul" id="btn-outra-categoria">🎯 Outro assunto</button>
+        <button class="botao botao-roxa" id="btn-inicio-novo">🏠 Início</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+<canvas id="confete"></canvas>
+
+<script>
+"use strict";
+
+/* ============ SONS (Web Audio) ============ */
+let ctxAudio = null;
+let somLigado = true;
+function audio() {
+  if (!ctxAudio) {
+    try { ctxAudio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+  }
+  return ctxAudio;
+}
+function tocarNota(freq, inicio, dur, tipo) {
+  if (!somLigado) return;
+  const ctx = audio(); if (!ctx) return;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = tipo || "triangle";
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, ctx.currentTime + inicio);
+  g.gain.linearRampToValueAtTime(0.18, ctx.currentTime + inicio + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + inicio + dur);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(ctx.currentTime + inicio);
+  o.stop(ctx.currentTime + inicio + dur + 0.05);
+}
+function somClique() { tocarNota(600, 0, 0.08, "square"); }
+function somCerto() { [523.25, 659.25, 783.99].forEach((f, i) => tocarNota(f, i * 0.12, 0.18)); }
+function somErrado() { tocarNota(220, 0, 0.2, "sawtooth"); tocarNota(160, 0.18, 0.3, "sawtooth"); }
+function somTick() { tocarNota(1000, 0, 0.06, "square"); }
+function somTempoFim() { tocarNota(140, 0, 0.4, "sawtooth"); }
+function somVitoria() { [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tocarNota(f, i * 0.15, 0.3)); }
+function somGameOver() { [400, 300, 210, 150].forEach((f, i) => tocarNota(f, i * 0.2, 0.25, "sawtooth")); }
+
+/* ============ PERGUNTAS ============ */
+const CATEGORIAS = {
+  coletivos:  { nome: "Coletivos de Animais", icone: "🦁", cor: "#f97316" },
+  capitais:   { nome: "Capitais do Brasil",   icone: "🇧🇷", cor: "#16a34a" },
+  filmes:     { nome: "Filmes",               icone: "🎬", cor: "#dc2626" },
+  desenhos:   { nome: "Desenhos Animados",    icone: "📺", cor: "#2563eb" },
+  logica:     { nome: "Raciocínio Lógico",    icone: "🧠", cor: "#0d9488" },
+  charadas:   { nome: "Charadas",             icone: "🕵️", cor: "#ca8a04" },
+  biblia:     { nome: "Bíblia",               icone: "📖", cor: "#6d28d9" },
+  ciencia:    { nome: "Ciências",             icone: "🔬", cor: "#0891b2" },
+  portugues:  { nome: "Português",            icone: "📝", cor: "#059669" },
+  matematica: { nome: "Matemática",           icone: "➕", cor: "#ea580c" },
+  ingles:     { nome: "Inglês",               icone: "🇺🇸", cor: "#0ea5e9" },
+  musica:     { nome: "Música",               icone: "🎵", cor: "#db2777" },
+  cultura:    { nome: "Cultura",              icone: "🌍", cor: "#a21caf" },
+  esporte:    { nome: "Esporte",              icone: "⚽", cor: "#84cc16" }
+};
+
+const PERGUNTAS = [
+  /* ---- COLETIVOS ---- */
+  { c:"coletivos", p:"Como se chama um grupo de lobos?", o:["Alcateia","Manada","Cardume","Bando"], r:0, e:"Alcateia é o nome do grupo de lobos!" },
+  { c:"coletivos", p:"Como se chama um grupo de peixes?", o:["Cardume","Bando","Enxame","Manada"], r:0, e:"Os peixes nadam juntos em um cardume!" },
+  { c:"coletivos", p:"Como se chama um grupo de abelhas?", o:["Enxame","Cardume","Rebanho","Banda"], r:0, e:"As abelhas voam juntas em um enxame!" },
+  { c:"coletivos", p:"Como se chama um grupo de ovelhas?", o:["Rebanho","Manada","Alcateia","Bando"], r:0, e:"As ovelhas formam um rebanho!" },
+  { c:"coletivos", p:"Como se chama um grupo de bois?", o:["Boiada","Rebanho","Manada","Vara"], r:0, e:"Os bois juntos formam uma boiada!" },
+  { c:"coletivos", p:"Como se chama um grupo de elefantes?", o:["Manada","Cardume","Bando","Colmeia"], r:0, e:"Os elefantes andam em manada!" },
+  { c:"coletivos", p:"Como se chama um grupo de formigas?", o:["Formigueiro","Ninho","Colmeia","Toca"], r:0, e:"Muitas formigas vivem em um formigueiro!" },
+  { c:"coletivos", p:"Como se chama um grupo de passarinhos voando?", o:["Bando","Rebanho","Manada","Vara"], r:0, e:"Os passarinhos voam em bando!" },
+  /* ---- CAPITAIS ---- */
+  { c:"capitais", p:"Qual é a capital do Rio de Janeiro?", o:["Rio de Janeiro","Niterói","São Paulo","Belo Horizonte"], r:0, e:"A capital do estado também se chama Rio de Janeiro!" },
+  { c:"capitais", p:"Qual é a capital da Bahia?", o:["Salvador","Fortaleza","Recife","João Pessoa"], r:0, e:"Salvador foi a primeira capital do Brasil!" },
+  { c:"capitais", p:"Qual é a capital de Minas Gerais?", o:["Belo Horizonte","Ouro Preto","Juiz de Fora","São Paulo"], r:0, e:"Belo Horizonte é a capital mineira!" },
+  { c:"capitais", p:"Qual é a capital do Paraná?", o:["Curitiba","Florianópolis","Porto Alegre","Londrina"], r:0, e:"Curitiba é conhecida por suas praças e árvores!" },
+  { c:"capitais", p:"Qual é a capital de Santa Catarina?", o:["Florianópolis","Curitiba","Blumenau","Joinville"], r:0, e:"Florianópolis fica em uma ilha linda!" },
+  { c:"capitais", p:"Qual é a capital do Ceará?", o:["Fortaleza","Natal","Teresina","Maceió"], r:0, e:"Fortaleza tem praias lindas!" },
+  { c:"capitais", p:"Qual é a capital de Goiás?", o:["Goiânia","Brasília","Cuiabá","Palmas"], r:0, e:"Goiânia é a capital de Goiás. Brasília é a capital do Brasil!" },
+  { c:"capitais", p:"Qual é a capital do Amazonas?", o:["Manaus","Belém","Porto Velho","São Luís"], r:0, e:"Manaus fica no coração da Amazônia!" },
+  { c:"capitais", p:"Qual é a capital do Rio Grande do Sul?", o:["Porto Alegre","Curitiba","Florianópolis","Caxias do Sul"], r:0, e:"Porto Alegre é a capital gaúcha!" },
+  { c:"capitais", p:"Qual é a capital de Pernambuco?", o:["Recife","Salvador","Maceió","João Pessoa"], r:0, e:"Recife é chamada de 'Veneza brasileira'!" },
+  /* ---- FILMES ---- */
+  { c:"filmes", p:"Em 'Frozen', quem é a rainha com poderes de gelo?", o:["Elsa","Anna","Moana","Cinderela"], r:0, e:"A Elsa pode criar neve e gelo com as mãos!" },
+  { c:"filmes", p:"Em 'Procurando Nemo', qual peixinha tem memória curta?", o:["Dory","Nemo","Marlin","Squirt"], r:0, e:"A Dory é a amiga divertida que se esquece das coisas!" },
+  { c:"filmes", p:"Em 'Toy Story', qual é o nome do caubói?", o:["Woody","Buzz","Rex","Slinky"], r:0, e:"Woody é o xerife e o líder dos brinquedos!" },
+  { c:"filmes", p:"Em 'O Rei Leão', quem é o tio malvado do Simba?", o:["Scar","Mufasa","Zazu","Timão"], r:0, e:"Scar fez coisas ruins para tentar virar rei!" },
+  { c:"filmes", p:"Em 'Moana', quem é o semideus que ajuda a Moana?", o:["Maui","Hei Hei","Pua","Te Fiti"], r:0, e:"Maui tem um anzol mágico e pode virar vários animais!" },
+  { c:"filmes", p:"No filme 'Rio', quais são os nomes das araras?", o:["Blue e Jade","Tom e Jerry","Tim e Pumba","Arial e Melman"], r:0, e:"Blue e Jade são as araras azuis apaixonadas!" },
+  { c:"filmes", p:"Em 'Carros', qual é o nome do carro campeão?", o:["Relâmpago McQueen","Mate","Doc Hudson","Chick"], r:0, e:"Relâmpago McQueen é vermelho e muito veloz!" },
+  { c:"filmes", p:"Em 'A Era do Gelo', quem está sempre atrás de nozes?", o:["Scrat","Manny","Diego","Sid"], r:0, e:"Scrat é o esquilo que nunca consegue guardar sua noz!" },
+  /* ---- DESENHOS ---- */
+  { c:"desenhos", p:"Quem é o melhor amigo do Bob Esponja?", o:["Patrick","Lula Molusco","Siriguejo","Plankton"], r:0, e:"Patrick é a estrela-do-mar divertida!" },
+  { c:"desenhos", p:"A Peppa Pig é qual animal?", o:["Porquinha","Coelha","Vaca","Ovelha"], r:0, e:"Peppa é uma porquinha rosa que adora pular em poças!" },
+  { c:"desenhos", p:"Qual é o nome do coelhinho de pelúcia da Mônica?", o:["Sansão","Floquinho","Bidu","Thor"], r:0, e:"Sansão é o coelho que a Mônica defende com muita força!" },
+  { c:"desenhos", p:"O Pica-Pau é qual tipo de animal?", o:["Um pássaro","Um cachorro","Um peixe","Um gato"], r:0, e:"Pica-pau é um pássaro que bate o bico na madeira!" },
+  { c:"desenhos", p:"Na 'Turma da Mônica', quem não gosta de água nem de banho?", o:["Cascão","Cebolinha","Chico Bento","Magali"], r:0, e:"O Cascão foge de água desde bebê!" },
+  { c:"desenhos", p:"Em 'Masha e o Urso', quem é o amigo gigante da Masha?", o:["O Urso","A Raposa","O Pinguim","O Coelho"], r:0, e:"O Urso é grande, gentil e muito paciente com a Masha!" },
+  { c:"desenhos", p:"Em 'Tom e Jerry', qual é o nome do gato?", o:["Tom","Jerry","Spike","Tuffy"], r:0, e:"Tom vive tentando (sem sucesso) pegar o ratinho Jerry!" },
+  { c:"desenhos", p:"Em 'Pokémon', qual é o rato elétrico mais famoso?", o:["Pikachu","Charmander","Bulbasaur","Squirtle"], r:0, e:"Pikachu é o pokémon elétrico que solta raios!" },
+  /* ---- LÓGICA ---- */
+  { c:"logica", p:"Quanto é 2 + 2 x 2?", o:["6","8","4","10"], r:0, e:"Primeiro a multiplicação: 2 x 2 = 4. Depois: 2 + 4 = 6!" },
+  { c:"logica", p:"Complete a sequência: 2, 4, 6, 8, ...", o:["10","9","12","11"], r:0, e:"A sequência conta de 2 em 2!" },
+  { c:"logica", p:"Se Ana tem 3 maçãs e ganha mais 5, com quantas ela fica?", o:["8","7","5","15"], r:0, e:"3 + 5 = 8 maçãs!" },
+  { c:"logica", p:"Quantos lados tem um quadrado?", o:["4","3","5","6"], r:0, e:"O quadrado tem 4 lados iguais!" },
+  { c:"logica", p:"Qual número vem depois do 99?", o:["100","98","101","99"], r:0, e:"Depois do 99 vem o 100!" },
+  { c:"logica", p:"Que dia vem depois de sexta-feira?", o:["Sábado","Domingo","Quinta-feira","Segunda-feira"], r:0, e:"A semana continua: sábado!" },
+  { c:"logica", p:"Se você tem 10 balas e come 4, quantas sobram?", o:["6","5","7","14"], r:0, e:"10 - 4 = 6 balas!" },
+  { c:"logica", p:"Quantas patas têm dois cachorros?", o:["8","4","6","10"], r:0, e:"Cada cachorro tem 4 patas: 4 x 2 = 8!" },
+  /* ---- CHARADAS ---- */
+  { c:"charadas", p:"O que é, o que é? Tem dentes mas não morde.", o:["O pente","A tesoura","O garfo","O gato"], r:0, e:"O pente tem 'dentes' e serve para pentear o cabelo!" },
+  { c:"charadas", p:"O que é, o que é? Anda deitado e dorme em pé.", o:["O pé","O relógio","O pato","A cadeira"], r:0, e:"O nosso pé anda deitado no chão e 'dorme' em pé!" },
+  { c:"charadas", p:"O que é, o que é? Quanto mais seca, mais molhada fica.", o:["A toalha","A esponja","A roupa","A nuvem"], r:0, e:"A toalha seca a gente e depois fica toda molhada!" },
+  { c:"charadas", p:"O que é, o que é? Tem capa, mas não é super-herói; tem coroa, mas não é rei.", o:["O abacaxi","O bolo","O pirata","O cachorro"], r:0, e:"O abacaxi tem coroa e uma capa bem grossa!" },
+  { c:"charadas", p:"O que é, o que é? Cai em pé e corre deitado.", o:["A chuva","O vento","A bola","A neve"], r:0, e:"A chuva cai em pé e depois corre deitada pelo chão!" },
+  { c:"charadas", p:"O que é, o que é? Verde por fora e vermelho por dentro.", o:["A melancia","A maçã","A banana","A uva"], r:0, e:"A melancia é verde por fora e tem miolo vermelho!" },
+  { c:"charadas", p:"O que é, o que é? Enche uma casa, mas não pesa nada.", o:["A luz","A água","O bolo","A areia"], r:0, e:"A luz enche a casa inteira e não pesa nada!" },
+  { c:"charadas", p:"O que é, o que é? Tem orelha, mas não ouve.", o:["A panela","O coelho","O cachorro","O gato"], r:0, e:"A panela tem 'orelhas' (alças), mas não ouve nada!" },
+  /* ---- BÍBLIA ---- */
+  { c:"biblia", p:"Quem foi engolido por um grande peixe?", o:["Jonas","Noé","Davi","Pedro"], r:0, e:"Deus protegeu Jonas dentro do grande peixe!" },
+  { c:"biblia", p:"Quem construiu a arca para salvar os animais?", o:["Noé","Abraão","Moisés","José"], r:0, e:"Noé levou os animais para a arca, dois de cada!" },
+  { c:"biblia", p:"Quem venceu o gigante Golias?", o:["Davi","Sansão","Saul","Golias"], r:0, e:"Davi venceu Golias com uma funda e uma pedra!" },
+  { c:"biblia", p:"Onde Jesus nasceu?", o:["Belém","Nazaré","Jerusalém","Betânia"], r:0, e:"Jesus nasceu em Belém, numa manjedoura!" },
+  { c:"biblia", p:"Quantos dias Deus levou para criar o mundo?", o:["6","7","10","5"], r:0, e:"Em 6 dias Deus criou tudo e no 7º descansou!" },
+  { c:"biblia", p:"Qual animal falou com Balaão?", o:["Uma jumenta","Um leão","Uma cobra","Um macaco"], r:0, e:"Na Bíblia, a jumenta falou com Balaão!" },
+  { c:"biblia", p:"Quantos apóstolos Jesus escolheu?", o:["12","7","3","10"], r:0, e:"Jesus escolheu 12 apóstolos!" },
+  { c:"biblia", p:"Quem foi o primeiro homem criado por Deus?", o:["Adão","Noé","Caim","Moisés"], r:0, e:"Deus criou Adão e o colocou no Jardim do Éden!" },
+  /* ---- CIÊNCIAS ---- */
+  { c:"ciencia", p:"Quantas patas tem uma aranha?", o:["8","6","4","10"], r:0, e:"As aranhas têm 8 patas!" },
+  { c:"ciencia", p:"Qual é o maior animal do mundo?", o:["Baleia azul","Elefante","Tubarão","Girafa"], r:0, e:"A baleia azul é maior que um ônibus!" },
+  { c:"ciencia", p:"Quantos planetas existem no Sistema Solar?", o:["8","9","7","12"], r:0, e:"São 8: Mercúrio, Vênus, Terra, Marte, Júpiter, Saturno, Urano e Netuno!" },
+  { c:"ciencia", p:"Qual é o animal mais rápido da terra?", o:["Guepardo","Leão","Cavalo","Coelho"], r:0, e:"O guepardo pode correr até 120 km/h!" },
+  { c:"ciencia", p:"O que as plantas precisam para crescer?", o:["Sol, água e terra","Só açúcar","Só sombra","Só vento"], r:0, e:"As plantas precisam de sol, água e terra!" },
+  { c:"ciencia", p:"Qual é o planeta em que vivemos?", o:["Terra","Marte","Júpiter","Vênus"], r:0, e:"O nosso planeta é a Terra!" },
+  { c:"ciencia", p:"Quantos corações tem um polvo?", o:["3","1","2","5"], r:0, e:"O polvo tem 3 corações!" },
+  { c:"ciencia", p:"Qual é o maior planeta do Sistema Solar?", o:["Júpiter","Terra","Saturno","Marte"], r:0, e:"Júpiter é tão grande que caberia mais de mil Terras!" },
+  /* ---- PORTUGUÊS ---- */
+  { c:"portugues", p:"Qual é o plural de 'gato'?", o:["Gatos","Gata","Gatões","Gatinho"], r:0, e:"O plural de gato é gatos: um gato, muitos gatos!" },
+  { c:"portugues", p:"Qual destas palavras é um verbo?", o:["Correr","Cadeira","Bonito","Rapaz"], r:0, e:"Verbo é ação, e 'correr' é uma ação!" },
+  { c:"portugues", p:"Qual é o contrário de 'grande'?", o:["Pequeno","Alto","Gordo","Comprido"], r:0, e:"Grande e pequeno são opostos!" },
+  { c:"portugues", p:"Qual palavra rima com 'coração'?", o:["Canção","Corrida","Casa","Laranja"], r:0, e:"Canção e coração terminam com o mesmo som!" },
+  { c:"portugues", p:"Quantas letras tem a palavra 'BOLA'?", o:["4","3","5","6"], r:0, e:"B-O-L-A: são 4 letras!" },
+  { c:"portugues", p:"Qual é o plural de 'pão'?", o:["Pães","Pãos","Pãezinhos","Pão"], r:0, e:"O plural de pão é pães!" },
+  { c:"portugues", p:"Qual frase fala de algo que já aconteceu?", o:["Eu comi pizza","Eu como pizza","Eu vou comer pizza","Eu comerei pizza"], r:0, e:"'Comi' está no passado!" },
+  { c:"portugues", p:"Qual destas palavras começa com vogal?", o:["Abacaxi","Banana","Cachorro","Dado"], r:0, e:"Abacaxi começa com a vogal A!" },
+  { c:"portugues", p:"O que é um substantivo?", o:["Nome de pessoa, lugar ou coisa","Uma ação","Uma cor","Um som"], r:0, e:"Substantivos são os nomes: bola, Ana, escola, por exemplo!" },
+  { c:"portugues", p:"Qual é o feminino de 'rei'?", o:["Rainha","Princesa","Duquesa","Imperatriz"], r:0, e:"A mulher do rei é a rainha!" },
+  /* ---- MATEMÁTICA ---- */
+  { c:"matematica", p:"Quanto é 7 + 8?", o:["15","14","16","13"], r:0, e:"7 + 8 = 15!" },
+  { c:"matematica", p:"Quanto é 9 x 3?", o:["27","24","21","30"], r:0, e:"9 x 3 = 27!" },
+  { c:"matematica", p:"Quanto é 20 - 6?", o:["14","12","16","13"], r:0, e:"20 - 6 = 14!" },
+  { c:"matematica", p:"Quanto é 100 ÷ 10?", o:["10","20","5","100"], r:0, e:"100 ÷ 10 = 10!" },
+  { c:"matematica", p:"Qual é a metade de 18?", o:["9","8","6","12"], r:0, e:"Metade de 18 é 9, porque 9 + 9 = 18!" },
+  { c:"matematica", p:"Quanto é o dobro de 6?", o:["12","10","14","18"], r:0, e:"O dobro de 6 é 12, porque 6 + 6 = 12!" },
+  { c:"matematica", p:"Quanto é 5 x 5?", o:["25","20","30","15"], r:0, e:"5 x 5 = 25!" },
+  { c:"matematica", p:"Quantos centavos tem uma moeda de 1 real?", o:["100","10","50","1"], r:0, e:"1 real é igual a 100 centavos!" },
+  /* ---- INGLÊS ---- */
+  { c:"ingles", p:"Como se diz 'cachorro' em inglês?", o:["Dog","Cat","Bird","Fish"], r:0, e:"Cachorro em inglês é dog!" },
+  { c:"ingles", p:"Como se diz 'gato' em inglês?", o:["Cat","Dog","Mouse","Rabbit"], r:0, e:"Gato em inglês é cat!" },
+  { c:"ingles", p:"Como se diz 'obrigado' em inglês?", o:["Thank you","Please","Sorry","Hello"], r:0, e:"Obrigado em inglês é thank you!" },
+  { c:"ingles", p:"Como se diz 'olá' em inglês?", o:["Hello","Goodbye","Good night","Yes"], r:0, e:"Olá em inglês é hello!" },
+  { c:"ingles", p:"Como se diz 'maçã' em inglês?", o:["Apple","Orange","Banana","Grape"], r:0, e:"Maçã em inglês é apple!" },
+  { c:"ingles", p:"Como se diz 'azul' em inglês?", o:["Blue","Red","Green","Yellow"], r:0, e:"Azul em inglês é blue!" },
+  { c:"ingles", p:"O que significa 'please'?", o:["Por favor","Obrigado","Desculpa","Bom dia"], r:0, e:"Please quer dizer 'por favor'!" },
+  { c:"ingles", p:"Como se diz 'água' em inglês?", o:["Water","Milk","Juice","Bread"], r:0, e:"Água em inglês é water!" },
+  { c:"ingles", p:"Como se diz 'escola' em inglês?", o:["School","House","Car","Book"], r:0, e:"Escola em inglês é school!" },
+  /* ---- MÚSICA ---- */
+  { c:"musica", p:"Qual instrumento tem teclas brancas e pretas?", o:["Piano","Violão","Bateria","Flauta"], r:0, e:"O piano tem teclas brancas e pretas!" },
+  { c:"musica", p:"Quantas cordas tem um violão?", o:["6","4","8","2"], r:0, e:"O violão tem 6 cordas!" },
+  { c:"musica", p:"Qual destes é um instrumento de sopro?", o:["Flauta","Violino","Violão","Piano"], r:0, e:"A flauta toca quando a gente sopra!" },
+  { c:"musica", p:"Onde a música 'Parabéns pra você' é cantada?", o:["Festa de aniversário","Escola","Praia","Dentista"], r:0, e:"A música de parabéns é cantada nas festas de aniversário!" },
+  { c:"musica", p:"Qual é a nota musical que vem depois do Dó?", o:["Ré","Mi","Fá","Sol"], r:0, e:"A escala começa: Dó, Ré, Mi..." },
+  { c:"musica", p:"Qual é o instrumento tocado com baquetas e que tem tambores?", o:["Bateria","Violino","Saxofone","Harpa"], r:0, e:"A bateria tem tambores que a gente bate com baquetas!" },
+  { c:"musica", p:"Como pode ser o som de uma música?", o:["Alto ou baixo","Doce ou salgado","Quente ou frio","Redondo ou quadrado"], r:0, e:"O som pode ser alto ou baixo!" },
+  { c:"musica", p:"Qual cantor é chamado de 'Rei do Rock'?", o:["Elvis Presley","Michael Jackson","Roberto Carlos","Justin Bieber"], r:0, e:"Elvis Presley ficou famoso como o Rei do Rock!" },
+  /* ---- CULTURA ---- */
+  { c:"cultura", p:"Qual é a língua oficial do Brasil?", o:["Português","Espanhol","Inglês","Francês"], r:0, e:"No Brasil falamos português!" },
+  { c:"cultura", p:"Qual é a maior festa popular do Brasil?", o:["Carnaval","Natal","Páscoa","Halloween"], r:0, e:"O Carnaval é a festa mais famosa do Brasil!" },
+  { c:"cultura", p:"Qual é a moeda usada no Brasil?", o:["Real","Dólar","Euro","Peso"], r:0, e:"A moeda do Brasil é o real!" },
+  { c:"cultura", p:"O Carnaval é famoso em qual cidade?", o:["Rio de Janeiro","Curitiba","Porto Alegre","Manaus"], r:0, e:"O Carnaval do Rio de Janeiro é famoso no mundo todo!" },
+  { c:"cultura", p:"Qual dança é típica das festas juninas?", o:["Quadrilha","Ballet","Samba","Hip hop"], r:0, e:"A quadrilha é a dança típica da festa junina!" },
+  { c:"cultura", p:"Qual é o prato típico mais famoso do Brasil?", o:["Feijoada","Pizza","Sushi","Hambúrguer"], r:0, e:"A feijoada é um prato bem brasileiro!" },
+  { c:"cultura", p:"O Brasil fica em qual continente?", o:["América do Sul","Europa","Ásia","África"], r:0, e:"O Brasil fica na América do Sul!" },
+  { c:"cultura", p:"Qual é a maior cidade do Brasil?", o:["São Paulo","Rio de Janeiro","Brasília","Salvador"], r:0, e:"São Paulo é a maior cidade do país!" },
+  { c:"cultura", p:"Qual personagem do folclore é um menino travesso de uma perna só?", o:["Saci-Pererê","Curupira","Boto-cor-de-rosa","Iara"], r:0, e:"O Saci-Pererê é o travesso menino de uma perna só!" },
+  /* ---- ESPORTE ---- */
+  { c:"esporte", p:"Qual é o esporte mais popular do Brasil?", o:["Futebol","Vôlei","Basquete","Natação"], r:0, e:"O futebol é a paixão nacional!" },
+  { c:"esporte", p:"Quantos jogadores tem um time de futebol em campo?", o:["11","10","12","5"], r:0, e:"Cada time de futebol tem 11 jogadores em campo!" },
+  { c:"esporte", p:"Em qual esporte se usa uma cesta para marcar pontos?", o:["Basquete","Futebol","Tênis","Golfe"], r:0, e:"No basquete a bola entra na cesta!" },
+  { c:"esporte", p:"Qual seleção ganhou mais Copas do Mundo?", o:["Brasil","Alemanha","Argentina","França"], r:0, e:"O Brasil tem 5 títulos de Copa do Mundo!" },
+  { c:"esporte", p:"Quem é chamado de 'Rei do Futebol'?", o:["Pelé","Maradona","Neymar","Messi"], r:0, e:"Pelé marcou mais de mil gols e ficou famoso no mundo todo!" },
+  { c:"esporte", p:"Em qual esporte se usa uma raquete?", o:["Tênis","Natação","Futebol","Basquete"], r:0, e:"No tênis a gente joga com raquete e bolinha!" },
+  { c:"esporte", p:"Qual esporte é disputado na piscina?", o:["Natação","Futebol","Vôlei de praia","Atletismo"], r:0, e:"Na natação os atletas nadam para vencer a prova!" },
+  { c:"esporte", p:"Quantos jogadores de vôlei ficam em cada lado da quadra?", o:["6","5","11","2"], r:0, e:"Cada time de vôlei tem 6 jogadores em quadra!" },
+  { c:"esporte", p:"Qual país sediou a Copa do Mundo de 2014?", o:["Brasil","Catar","Rússia","África do Sul"], r:0, e:"A Copa de 2014 aconteceu aqui no Brasil!" },
+  { c:"esporte", p:"Em que esporte o atleta precisa ser o mais rápido para vencer?", o:["Atletismo","Xadrez","Boliche","Dardos"], r:0, e:"Nas corridas de atletismo, quem chega primeiro vence!" }
+];
+
+/* ============ ESTADO DO JOGO ============ */
+const TEMPO_LIMITE = 20;
+let lista = [];          // perguntas da rodada
+let indice = 0;
+let pontos = 0;
+let vidas = 3;
+let nome = "";
+let respondido = false;
+let timerInterval = null;
+let tempoRestante = TEMPO_LIMITE;
+let categoriaAtual = null;
+let categoriaChave = null;
+let erros = [];
+let treinoErros = [];
+let jogadores = [];
+let jogadorAtual = 0;
+let numJogadores = 1;
+let fimAguardando = false;
+
+/* ============ CONFETES ============ */
+const cv = document.getElementById("confete");
+const ctx = cv.getContext("2d");
+let particulas = [];
+let raf = null;
+const CORES = ["#f43f5e","#f59e0b","#10b981","#3b82f6","#8b5cf6","#ec4899","#facc15"];
+function soltarConfete() {
+  cv.width = innerWidth; cv.height = innerHeight;
+  for (let i = 0; i < 180; i++) {
+    particulas.push({
+      x: Math.random() * cv.width,
+      y: -20 - Math.random() * cv.height * 0.6,
+      vx: (Math.random() - 0.5) * 5,
+      vy: Math.random() * 3 + 2,
+      rot: Math.random() * Math.PI * 2,
+      vr: (Math.random() - 0.5) * 0.2,
+      tam: Math.random() * 10 + 6,
+      cor: CORES[Math.floor(Math.random() * CORES.length)]
+    });
+  }
+  if (!raf) raf = requestAnimationFrame(loopConfete);
+}
+function loopConfete() {
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  particulas = particulas.filter(p => p.y < cv.height + 30);
+  particulas.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.fillStyle = p.cor;
+    ctx.fillRect(-p.tam / 2, -p.tam / 2, p.tam, p.tam * 0.6);
+    ctx.restore();
+  });
+  if (particulas.length > 0) raf = requestAnimationFrame(loopConfete);
+  else { raf = null; ctx.clearRect(0, 0, cv.width, cv.height); }
+}
+
+/* ============ UTILITÁRIOS ============ */
+function embaralhar(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function embaralharPergunta(q) {
+  const pares = q.o.map((op, i) => ({ op, i }));
+  const a = embaralhar(pares);
+  return { ...q, o: a.map(x => x.op), r: a.findIndex(x => x.i === q.r) };
+}
+const $ = id => document.getElementById(id);
+function mostrarTela(id) {
+  document.querySelectorAll(".tela").forEach(t => t.classList.remove("ativa"));
+  $(id).classList.add("ativa");
+  window.scrollTo(0, 0);
+}
+
+/* ============ NAVEGAÇÃO ============ */
+function renderInputs() {
+  const box = $("inputs-nomes");
+  box.innerHTML = "";
+  for (let i = 0; i < numJogadores; i++) {
+    const inp = document.createElement("input");
+    inp.className = "input-nome";
+    inp.type = "text";
+    inp.maxLength = 12;
+    inp.placeholder = "Nome do Jogador " + (i + 1) + "...";
+    box.appendChild(inp);
+  }
+  $("num-jogadores").textContent = numJogadores;
+}
+$("btn-menos").addEventListener("click", () => {
+  somClique();
+  if (numJogadores > 1) { numJogadores--; renderInputs(); }
+});
+$("btn-mais").addEventListener("click", () => {
+  somClique();
+  if (numJogadores < 10) { numJogadores++; renderInputs(); }
+});
+$("btn-inicio").addEventListener("click", () => {
+  somClique();
+  const inputs = document.querySelectorAll("#inputs-nomes .input-nome");
+  jogadores = [];
+  inputs.forEach((inp, i) => {
+    jogadores.push({ nome: inp.value.trim() || ("Jogador " + (i + 1)), pontos: 0, vidas: 3, acertos: 0, total: 0, erros: [] });
+  });
+  numJogadores = jogadores.length;
+  jogadorAtual = 0;
+  nome = jogadores[0].nome;
+  if (jogadores.length === 1) {
+    $("ola-nome").textContent = "Oi, " + nome + "! O que vamos aprender hoje? 😄";
+  } else {
+    $("ola-nome").textContent = "👥 Jogadores: " + jogadores.map(j => j.nome).join(", ") + "! Escolham o assunto!";
+  }
+  mostrarTela("tela-categorias");
+});
+$("btn-voltar-inicio").addEventListener("click", () => { somClique(); mostrarTela("tela-inicio"); });
+$("btn-sair").addEventListener("click", () => {
+  somClique();
+  clearInterval(timerInterval);
+  timerInterval = null;
+  mostrarTela("tela-inicio");
+});
+$("btn-som").addEventListener("click", () => {
+  somLigado = !somLigado;
+  $("btn-som").textContent = somLigado ? "🔊" : "🔇";
+  if (somLigado) somClique();
+});
+
+function montarCategorias() {
+  const grade = $("grade-categorias");
+  grade.innerHTML = "";
+  Object.keys(CATEGORIAS).forEach(chave => {
+    const cat = CATEGORIAS[chave];
+    const btn = document.createElement("button");
+    btn.className = "cat-btn";
+    btn.style.background = "linear-gradient(135deg," + cat.cor + "," + sombrear(cat.cor) + ")";
+    btn.innerHTML = "<span class='icone'>" + cat.icone + "</span>" + cat.nome;
+    btn.addEventListener("click", () => { somClique(); iniciarJogo(chave); });
+    grade.appendChild(btn);
+  });
+}
+function sombrear(hex) {
+  const num = parseInt(hex.slice(1), 16);
+  let r = (num >> 16) & 255, g = (num >> 8) & 255, b = num & 255;
+  r = Math.max(0, r - 60); g = Math.max(0, g - 60); b = Math.max(0, b - 60);
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+$("btn-tudo").addEventListener("click", () => {
+  somClique();
+  categoriaChave = "misturado";
+  reiniciarPontos();
+  lista = montarListaRodada();
+  comecarRodada("🎲 Tudo Misturado");
+});
+
+/* ============ JOGO ============ */
+function montarListaRodada() {
+  if (categoriaChave === "misturado") {
+    return embaralhar(PERGUNTAS).slice(0, 10);
+  }
+  const base = PERGUNTAS.filter(q => q.c === categoriaChave);
+  return embaralhar(base).map(embaralharPergunta);
+}
+function reiniciarPontos() {
+  jogadores.forEach(j => { j.pontos = 0; j.vidas = 3; j.acertos = 0; j.total = 0; j.erros = []; });
+  jogadorAtual = 0;
+  carregarJogador();
+}
+function carregarJogador() {
+  const pl = jogadores[jogadorAtual];
+  nome = pl.nome;
+  pontos = pl.pontos;
+  vidas = pl.vidas;
+  erros = pl.erros;
+}
+function salvarJogador() {
+  const pl = jogadores[jogadorAtual];
+  pl.pontos = pontos;
+  pl.vidas = vidas;
+  pl.erros = erros;
+}
+function iniciarJogo(chave) {
+  categoriaChave = chave;
+  reiniciarPontos();
+  lista = montarListaRodada();
+  comecarRodada(CATEGORIAS[chave].icone + " " + CATEGORIAS[chave].nome);
+}
+function comecarRodada(tag) {
+  categoriaAtual = tag;
+  indice = 0;
+  jogadorAtual = 0;
+  jogadores.forEach(j => { j.pontos = 0; j.vidas = 3; j.acertos = 0; j.total = 0; j.erros = []; });
+  carregarJogador();
+  atualizarHud();
+  mostrarTela("tela-jogo");
+  montarPergunta();
+}
+function atualizarHud() {
+  $("jogador-badge").textContent = "🎮 " + nome;
+  $("vidas").textContent = "❤️".repeat(Math.max(0, vidas)) + "🤍".repeat(Math.max(0, 3 - vidas));
+  $("pontos").textContent = "⭐ " + pontos;
+  $("progresso").style.width = (indice / lista.length * 100) + "%";
+  atualizarPlacarVivo();
+}
+function atualizarPlacarVivo() {
+  const box = $("placar-vivo");
+  if (!box) return;
+  if (jogadores.length <= 1) { box.innerHTML = ""; return; }
+  box.innerHTML = jogadores.map((j, i) => {
+    const ativo = (i === jogadorAtual) ? "background:#fff;color:#7c3aed;font-weight:800;transform:scale(1.06);" : "background:rgba(255,255,255,.35);color:#fff;";
+    return "<span style='border-radius:999px;padding:4px 14px;font-size:.85rem;box-shadow:0 2px 6px rgba(0,0,0,.15);transition:all .2s;" + ativo + "'>" + j.nome + ": " + j.pontos + "⭐</span>";
+  }).join("");
+}
+
+function montarPergunta() {
+  jogadorAtual = indice % jogadores.length;
+  carregarJogador();
+  const q = lista[indice];
+  respondido = false;
+  $("tag-categoria").textContent = categoriaAtual;
+  $("turno-aviso").textContent = jogadores.length > 1 ? ("👆 É a vez de " + nome + "!") : "";
+  $("pergunta").textContent = q.p;
+  $("feedback").className = "feedback";
+  $("feedback").innerHTML = "";
+  $("acoes").classList.remove("ativa");
+  $("btn-proxima").textContent = "➡️ Próxima";
+  atualizarHud();
+
+  const letras = ["A", "B", "C", "D"];
+  const box = $("opcoes");
+  box.innerHTML = "";
+  q.o.forEach((op, i) => {
+    const btn = document.createElement("button");
+    btn.className = "opcao";
+    btn.dataset.i = i;
+    btn.innerHTML = "<span class='letra'>" + letras[i] + "</span><span>" + op + "</span>";
+    btn.addEventListener("click", () => responder(i, btn));
+    box.appendChild(btn);
+  });
+
+  iniciarCronometro();
+}
+
+function iniciarCronometro() {
+  clearInterval(timerInterval);
+  tempoRestante = TEMPO_LIMITE;
+  const barra = $("cronometro");
+  barra.classList.remove("perigo");
+  $("tempo-numero").textContent = tempoRestante;
+  barra.style.width = "100%";
+  timerInterval = setInterval(() => {
+    tempoRestante--;
+    if (tempoRestante <= 0) {
+      clearInterval(timerInterval);
+      barra.style.width = "0%";
+      somTempoFim();
+      responder(-1, null);
+      return;
+    }
+    $("tempo-numero").textContent = tempoRestante;
+    barra.style.width = (tempoRestante / TEMPO_LIMITE * 100) + "%";
+    if (tempoRestante <= 5) {
+      barra.classList.add("perigo");
+      somTick();
+    }
+  }, 1000);
+}
+
+function responder(indiceEscolhido, btnEscolhido) {
+  if (respondido) return;
+  respondido = true;
+  clearInterval(timerInterval);
+
+  const q = lista[indice];
+  const botoes = document.querySelectorAll(".opcao");
+  const letras = ["A", "B", "C", "D"];
+  let acertou = indiceEscolhido === q.r;
+
+  botoes.forEach((b, i) => {
+    b.classList.add("apagada");
+    if (i === q.r) b.classList.add("certa");
+    if (i === indiceEscolhido && !acertou) b.classList.add("errada");
+  });
+
+  const fb = $("feedback");
+  const pl = jogadores[jogadorAtual];
+  pl.total++;
+  if (acertou) {
+    pontos += 10;
+    pl.acertos++;
+    fb.className = "feedback certo";
+    fb.innerHTML = "🎉 Correto, " + nome + "! +10 pontos<br><span class='explicacao'>" + q.e + "</span>";
+    somCerto();
+  } else {
+    vidas--;
+    erros.push(q);
+    fb.className = "feedback errado";
+    const texto = indiceEscolhido === -1
+      ? "⏰ Tempo esgotado! A resposta certa é a letra " + letras[q.r] + "."
+      : "😢 Quase! A resposta certa é a letra " + letras[q.r] + ".";
+    fb.innerHTML = texto + "<br><span class='explicacao'>" + q.e + "</span>";
+    somErrado();
+  }
+  salvarJogador();
+
+  $("pontos").textContent = "⭐ " + pontos;
+  $("vidas").textContent = "❤️".repeat(Math.max(0, vidas)) + "🤍".repeat(Math.max(0, 3 - vidas));
+  $("acoes").classList.add("ativa");
+  atualizarPlacarVivo();
+
+  indice++;
+
+  fimAguardando = indice >= lista.length || (jogadores.length === 1 && vidas <= 0);
+  $("btn-proxima").textContent = fimAguardando ? "🏁 Ver resultado" : "➡️ Próxima";
+}
+
+$("btn-proxima").addEventListener("click", () => {
+  somClique();
+  if (fimAguardando) {
+    if (jogadores.length > 1) mostrarRanking();
+    else mostrarFim();
+    return;
+  }
+  montarPergunta();
+});
+
+/* ============ FIM ============ */
+function mostrarFim() {
+  clearInterval(timerInterval);
+  const total = lista.length;
+  const acertos = Math.max(0, Math.round(pontos / 10));
+  const pct = acertos / total;
+
+  let estrelas, emoji, msg;
+  if (vidas <= 0) {
+    estrelas = "😢"; emoji = "💪";
+    msg = "As vidas acabaram, mas você é um campeão por tentar!";
+  } else if (pct >= 0.9) { estrelas = "⭐⭐⭐"; emoji = "🏆"; msg = "Você é um gênio, " + nome + "! Incrível!"; }
+  else if (pct >= 0.6) { estrelas = "⭐⭐"; emoji = "🎉"; msg = "Muito bem, " + nome + "! Continue assim!"; }
+  else if (pct >= 0.3) { estrelas = "⭐"; emoji = "🙂"; msg = "Bom começo, " + nome + "! Vamos treinar mais?"; }
+  else { estrelas = "💪"; emoji = "🌱"; msg = "Não desista, " + nome + "! Cada erro ensina!"; }
+
+  $("emoji-fim").textContent = emoji;
+  $("estrelas").textContent = estrelas;
+  $("mensagem-final").textContent = msg;
+  $("placar-final").textContent = "Você acertou " + acertos + " de " + total + " perguntas e fez " + pontos + " pontos!";
+  $("titulo-fim").textContent = nome + ", você chegou ao fim! 🎊";
+
+  const rev = $("revisao");
+  const btnTreinar = $("btn-treinar-erros");
+  const letras = ["A", "B", "C", "D"];
+  if (erros.length === 0) {
+    rev.innerHTML = "<p style='margin-top:8px;font-weight:700;color:#10b981;text-align:center;'>🏅 Perfeito! Você acertou tudo — conhecimento mandou bem!</p>";
+    btnTreinar.style.display = "none";
+  } else {
+    let html = "<h3 style='font-size:1.1rem;color:#7c3aed;margin-bottom:4px;'>📚 Aprenda com os erros:</h3>";
+    erros.forEach((q, k) => {
+      html += "<div style='background:#f8fafc;border:2px solid #fee2e2;border-radius:14px;padding:10px 14px;margin-top:10px;'>"
+        + "<div style='font-weight:800;color:#334155;'>" + (k + 1) + ". " + q.p + "</div>"
+        + "<div style='color:#059669;font-weight:700;margin-top:4px;'>✅ " + letras[q.r] + ") " + q.o[q.r] + "</div>"
+        + "<div style='color:#64748b;font-size:.9rem;margin-top:4px;'>" + q.e + "</div></div>";
+    });
+    rev.innerHTML = html;
+    btnTreinar.style.display = "inline-block";
+  }
+
+  mostrarTela("tela-fim");
+  soltarConfete();
+  if (pct >= 0.6 && vidas > 0) somVitoria();
+  else if (vidas <= 0) somGameOver();
+}
+
+function mostrarRanking() {
+  const ordem = jogadores.slice().sort((a, b) => b.pontos - a.pontos);
+  const medalhas = ["🥇", "🥈", "🥉", "🏅", "🎖️", "🎖️", "🎖️", "🎖️", "🎖️", "🎖️"];
+  $("emoji-fim").textContent = "🏆";
+  $("titulo-fim").textContent = "Ranking Final!";
+  $("estrelas").textContent = ordem.map((_, i) => medalhas[i] || "🏅").join(" ");
+  $("mensagem-final").textContent = "Campeão: " + ordem[0].nome + " com " + ordem[0].pontos + " pontos! 🎉";
+  let placar = "";
+  ordem.forEach((j, i) => {
+    placar += (medalhas[i] || "🏅") + " <b>" + j.nome + "</b> — " + j.pontos + " pontos (" + j.acertos + " de " + j.total + " acertos)<br>";
+  });
+  $("placar-final").innerHTML = placar;
+  $("revisao").innerHTML = "";
+  $("btn-treinar-erros").style.display = "none";
+  mostrarTela("tela-fim");
+  soltarConfete();
+  somVitoria();
+}
+
+$("btn-treinar-erros").addEventListener("click", () => {
+  somClique();
+  if (erros.length === 0) return;
+  treinoErros = erros.slice();
+  lista = embaralhar(treinoErros).map(embaralharPergunta);
+  comecarRodada("🎯 Treinando as erradas");
+});
+$("btn-jogar-novamente").addEventListener("click", () => {
+  somClique();
+  if (categoriaAtual === "🎯 Treinando as erradas" && treinoErros.length) {
+    lista = embaralhar(treinoErros).map(embaralharPergunta);
+    comecarRodada("🎯 Treinando as erradas");
+    return;
+  }
+  reiniciarPontos();
+  lista = montarListaRodada();
+  comecarRodada(categoriaAtual);
+});
+$("btn-outra-categoria").addEventListener("click", () => { somClique(); reiniciarPontos(); mostrarTela("tela-categorias"); });
+$("btn-inicio-novo").addEventListener("click", () => { somClique(); mostrarTela("tela-inicio"); });
+
+/* ============ TECLADO ============ */
+document.addEventListener("keydown", (e) => {
+  const telaJogoAtiva = $("tela-jogo").classList.contains("ativa");
+  if (!telaJogoAtiva) return;
+  const tecla = e.key.toUpperCase();
+  const letras = ["A", "B", "C", "D"];
+  if (letras.includes(tecla) && !respondido) {
+    const idx = letras.indexOf(tecla);
+    const btn = document.querySelectorAll(".opcao")[idx];
+    if (btn) responder(idx, btn);
+  } else if (e.key === "Enter" && respondido) {
+    $("btn-proxima").click();
+  }
+});
+
+/* ============ INÍCIO ============ */
+montarCategorias();
+renderInputs();
+</script>
+</body>
+</html>
